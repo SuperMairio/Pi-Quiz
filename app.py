@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import random
 
 app = Flask(__name__)
@@ -13,8 +13,12 @@ def ShuffleAnswers(question):
 
 @app.route('/') #127.0.0.1:5000
 def index(): #homepage
-    return ShuffleAnswers(1)
-    #return render_template('index.html')
+    return render_template('index.html')
+
+@app.route('/', methods=['POST'])
+def usernameForm():
+    username = request.form['username']
+    #Add to sql db
 
 @app.route('/quiz')
 def quiz():
