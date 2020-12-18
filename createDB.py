@@ -1,11 +1,15 @@
 import psycopg2
-import boto3f
+import boto3
+import os
 
-ENDPOINT = os.getenv(endpoint)
-PORT = os.getenv(port)
-USER = os.getenv(user)
-REGION = os.getenv(region)
+# D O   N O T   C O M M I T   T H E S E    V A R S ! ! !
+
+ENDPOINT = os.getvar(endpoint)
+PORT = os.getvar(port)
+USER = os.getvar(user)
+REGION = os.getvar(region)
 DBNAME = "Quiz"
+
 
 # AWS Variables
 os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
@@ -21,10 +25,6 @@ wrongAns = [["1a", "1b", "1c"],["2a", "2b", "2c"],["3a", "3b", "3c"]]
 try:
     conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=token)
     cur = conn.cursor
-
-    cur.execute("""SELECT now()""")
-    query_results = cur.fetchall()
-    print(query_results)
         
     createTables = ("CREATE TABLE HighScores (username VARCHAR(52), score INTEGER","CREATE TABLE Questions (question VARCHAR(255), right VARCHAR(255), wrong1 VARCHAR(255, wrong2 VARCHAR(255), wrong3 VARCHAR(255)")
     
@@ -49,4 +49,3 @@ except Exception as e:
 finally:
     if conn is not None:
         conn.close()
-

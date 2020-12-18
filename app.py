@@ -13,7 +13,7 @@ DBNAME = "Quiz"
 
 # AWS Variables
 os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
-session = boto3.Session(profile_name='RDSCreds')
+session = boto3.Session(profile_name='dbmaster')
 client = boto3.client('rds')
 token = client.generate_db_auth_token(DBHostname=ENDPOINT, port=PORT, DBUsername=USER, Region=REGION)
 
@@ -25,10 +25,6 @@ try:
 
 except Exception as e:
     print("Error:{}".format(e))
-
-finally:
-    conn.close()
-    
 
 def ShuffleAnswers(question):
     shuffledAns = answers[question]
@@ -42,7 +38,11 @@ def index(): #homepage
 @app.route('/', methods=['POST'])
 def usernameForm():
     username = request.form['username']
-    #Add to sql db
+
+    cur.execute("INSERT INTO HighScores (username) VALUES (%s)"(username))
+
+    cur.close()
+    conn.commit()
 
 @app.route('/quiz')
 def quiz():
@@ -54,3 +54,5 @@ def highScores():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
+
+conn.close()
