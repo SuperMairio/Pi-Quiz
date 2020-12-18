@@ -36,7 +36,7 @@ def index(): #homepage
     return render_template('index.html')
 
 @app.route('/', methods=['POST'])
-def usernameForm():
+def getUsername():
     username = request.form['username']
 
     cur.execute("INSERT INTO HighScores (username) VALUES (%s)"(username))
