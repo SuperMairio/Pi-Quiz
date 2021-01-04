@@ -26,11 +26,17 @@ try:
 except Exception as e:
     print("Error:{}".format(e))
 
+# Database functions
+def GetAnswers():
+    answers = cur.execute("SELECT right, wrong1, wrong2, wrong3 FROM Questions;")
+    return(answers)
 def ShuffleAnswers(question):
-    shuffledAns = answers[question]
+    answers = GetQuestions()
+    shuffledAns = answers[question-1] # because the array is 0 indexed
     random.shuffle(shuffledAns)
-    return(str(shuffledAns))
+    return(shuffledAns)
 
+# Web app functions
 @app.route('/') #127.0.0.1:5000
 def index(): #homepage
     return render_template('index.html')
@@ -39,7 +45,7 @@ def index(): #homepage
 def getUsername():
     username = request.form['username']
 
-    cur.execute("INSERT INTO HighScores (username) VALUES (%s)"(username))
+    cur.execute("INSERT INTO HighScores (username) VALUES (%s);"(username))
 
     cur.close()
     conn.commit()
@@ -50,7 +56,8 @@ def quiz():
 
 @app.route('/highScores')
 def highScores():
-    
+    data = cur.execute("SELECT * FROM HighScores order by DESC LIMIT 10;")
+    return render_template('highscores.html', highscores = data)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
