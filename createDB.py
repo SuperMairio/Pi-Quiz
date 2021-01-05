@@ -1,19 +1,21 @@
 import psycopg2
 import boto3
 import os
+import envs
 
-ENDPOINT = os.getvar(endpoint)
-PORT = os.getvar(port)
-USER = os.getvar(user)
-REGION = os.getvar(region)
+ENDPOINT = envs.endpoint
+PORT = envs.awsport
+USER = envs.dbuser
+REGION = envs.region
 DBNAME = "Quiz"
+PASSWORD = envs.password
 
 
 # AWS Variables
 os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
-session = boto3.Session(profile_name='RDSCreds')
+session = boto3.Session(profile_name='root')
 client = boto3.client('rds')
-token = client.generate_db_auth_token(DBHostname=ENDPOINT, port=PORT, DBUsername=USER, Region=REGION)
+token = client.generate_db_auth_token(DBHostname=ENDPOINT, Port=PORT, DBUsername=USER, Region=REGION)
 
 # Other Variables
 questions = ["Question 1", "Question 2", "Question 3"]
@@ -21,23 +23,18 @@ correctAns = ["1", "2", "3"]
 wrongAns = [["1a", "1b", "1c"],["2a", "2b", "2c"],["3a", "3b", "3c"]]
 
 try:
-    conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=token)
-    cur = conn.cursor
+    conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
+    cur = conn.cursor()
         
-    createTables = ("CREATE TABLE HighScores (username VARCHAR(52), score INTEGER","CREATE TABLE Questions (question VARCHAR(255), right VARCHAR(255), wrong1 VARCHAR(255, wrong2 VARCHAR(255), wrong3 VARCHAR(255);")
+    createTables = ("CREATE TABLE IF NOT EXISTS HighScores (username varchar(52) NOT NULL, score integer NOT NULL);","CREATE TABLE IF NOT EXISTS Questions (question varchar(255) NOT NULL, correct varchar(255) NOT NULL, wrong1 varchar(255) NOT NULL, wrong2 varchar(255) NOT NULL, wrong3 varchar(255) NOT NULL);")
     
     for command in createTables:
         cur.execute(command)
 
-    for q in questions:
-        cur.execute("INSERT INTO Questions (question) VALUES (%s);"(q))
-    
-    for a in correctAns:
-        cur.execute("INSERT INTO Questions (right) VALUES (%s);"(a))
-    
-    for w1,w2,w3 in wrongAns:
-        cur.execute("INSERT INTO  Questions (wrong1,wrong2,wrong3) VALUES (%s,%s,%s)'"(w1,w2,w3))
-    
+    for q, a, w in zip(questions, correctAns, wrongAns):
+        print(q)
+        cur.execute("INSERT INTO Questions (question,correct,wrong1,wrong2,wrong3) VALUES ('%s','%s','%s','%s','%s');" % (q,a,w[0],w[1],w[2]))
+
     cur.close()
     conn.commit()
 
