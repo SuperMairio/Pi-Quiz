@@ -1,0 +1,22 @@
+<html>
+    <head>
+        <link rel="stylesheet" href='/static/style.css' />
+    </head>
+    <body>
+        <h1> Quiz </h1>
+        <h3>Q{{questnum}}</h3>
+
+        <h3>{{question}}</h3>
+        <form id="quizForm" action="/quiz" method="POST">
+            <p>
+            <input type="radio" id="ans1" value={{answer}} />
+            <input type="radio" id="ans2" value={{answer2}} />
+            <input type="radio" id="ans3" value={{answer3}} />
+            <input type="radio" id="ans4" value={{answer4}} />
+            </p>
+
+            <input type="submit" value="Next Question" formaction="/quiz"/>
+        </form>
+
+    </body>
+</html>
