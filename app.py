@@ -21,10 +21,11 @@ token = client.generate_db_auth_token(DBHostname=ENDPOINT, Port=PORT, DBUsername
 
 app = Flask(__name__)
 qsAsked = []
+num = 0
 
 def GetAnswers():
     try:
-        conn  = psycopg2.connect(host=E nm  NDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
+        conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
         cur = conn.cursor()
         count = cur.execute("SELECT COUNT number FROM Questions;")
         n = random.randint(0,(count-1))
@@ -34,33 +35,33 @@ def GetAnswers():
         
         qsAsked.append(n)
 
-        answers = cur.execute("SELECT right, wrong1, wrong2, wrong3 FROM Questions WHERE number IS {'%s'};" % (n))
+        cur.execute("SELECT question, correct, wrong1, wrong2, wrong3 FROM Questions WHERE number = %s;" % ('1'))
+        answers = cur.fetchone()
         cur.close()
         conn.commit()
         conn.close()
-        return(answers)
+        return(answers) #a tuple NOT A LIST
 
     except Exception as e:
         print("Error:{}".format(e))
     
-def ShuffleAnswers(question):
-    answers = GetAnswers(question)
-    shuffledAns = answers # because the array is 0 indexed
-    random.shuffle(shuffledAns)
-    print(shuffledAns)
-    return(shuffledAns)
+def ShuffleAnswers():
+    answers = list(GetAnswers()) #must convert to list as tuples cannot be shuffled 
+    del answers[0] # get rid of question and just have answers
+    
+    random.shuffle(answers)
+
+    return(answers)
 
 def SetCookie():
-    if request.method == "POST":
-        questionNum +=1
-        response = make_response(render_template("quiz.html"))
-        response.set_cookie("QuestionNumber", questionNum)
-        return(response)
+    num = len(qsAsked) +1
+    if not request.cookies.get("Number"):
+        response = make_response("Creating Cookie")
+        response.set_cookie("Question Number", num)
 
 # Web app functions
 @app.route('/') #127.0.0.1:5000
 def index(): #homepage
-    ShuffleAnswers(0)
     return render_template("index.html")
 
 @app.route('/', methods=['POST'])
@@ -81,11 +82,15 @@ def getUsername():
 
 @app.route('/quiz', methods= ['POST'])
 def quiz():
-    if not request.cookies.get("Number"):
-        response = make_response("Creating Cookie")
-        response.set_cookie("Question Number", num)
+    answers = ShuffleAnswers()
+    q = answers[0]
+    ans1 = answers[1]
+    ans2 = answers[2]
+    ans3 = answers[3]
+    ans4 = answers[4]
+    num = request.cookies.get("Number")
 
-    return render_template("quiz.html")  
+    return render_template("quiz.html", questnum=num, question=q ,answer=ans1, answer2=ans2, answer3=ans3, answer4=ans4)  
 
 @app.route('/highScores')
 def highScores():
