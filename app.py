@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request
-import envs
+import envs #envs.py just holds all my variables I dont want public
 import random
 import sys
 import boto3
@@ -20,11 +20,21 @@ client = boto3.client('rds')
 token = client.generate_db_auth_token(DBHostname=ENDPOINT, Port=PORT, DBUsername=USER, Region=REGION)
 
 app = Flask(__name__)
+qsAsked = []
+
 def GetAnswers():
     try:
-        conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
+        conn  = psycopg2.connect(host=E nm  NDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
         cur = conn.cursor()
-        answers = cur.execute("SELECT right, wrong1, wrong2, wrong3 FROM Questions;")
+        count = cur.execute("SELECT COUNT number FROM Questions;")
+        n = random.randint(0,(count-1))
+
+        if n in qsAsked:
+            n = random.randint(0,(count-1))
+        
+        qsAsked.append(n)
+
+        answers = cur.execute("SELECT right, wrong1, wrong2, wrong3 FROM Questions WHERE number IS {'%s'};" % (n))
         cur.close()
         conn.commit()
         conn.close()
@@ -34,8 +44,8 @@ def GetAnswers():
         print("Error:{}".format(e))
     
 def ShuffleAnswers(question):
-    answers = GetAnswers()
-    shuffledAns = answers[question-1] # because the array is 0 indexed
+    answers = GetAnswers(question)
+    shuffledAns = answers # because the array is 0 indexed
     random.shuffle(shuffledAns)
     print(shuffledAns)
     return(shuffledAns)
