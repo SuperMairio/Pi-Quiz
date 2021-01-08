@@ -12,32 +12,41 @@ PASSWORD = envs.password
 
 
 # AWS Variables
-os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
-session = boto3.Session(profile_name='root')
-client = boto3.client('rds')
-token = client.generate_db_auth_token(DBHostname=ENDPOINT, Port=PORT, DBUsername=USER, Region=REGION)
+# os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
+# session = boto3.Session(profile_name='root')
+# client = boto3.client('rds')
+# token = client.generate_db_auth_token(DBHostname=ENDPOINT, Port=PORT, DBUsername=USER, Region=REGION)
 
 # Other Variables
-number = ["1","2","3"]
+number = [1,2,3]
 questions = ["Question 1", "Question 2", "Question 3"]
 correctAns = ["1", "2", "3"]
 wrongAns = [["1a", "1b", "1c"],["2a", "2b", "2c"],["3a", "3b", "3c"]]
 usernames = ["mairi", "Cooler Mairi", "abc"]
 scores = [2, 5, 1]
-def ExampleData(cur): 
+
+def ExampleData(cur,conn): 
     for n, q, a, w in zip(number, questions, correctAns, wrongAns):
-        cur.execute("INSERT INTO Questions (number, question,correct,wrong1,wrong2,wrong3) VALUES {'%s','%s','%s','%s','%s','%s'};" % (n,q,a,w[0],w[1],w[2]))
+        cur.execute("INSERT INTO Questions (number, question, correct, wrong1, wrong2, wrong3) VALUES (%i,'%s','%s','%s','%s','%s');" % (n,q,a,w[0],w[1],w[2]))
 
+    conn.commit()
+    
     for u, s in zip(usernames, scores):
-        cur.execute("INSERT INTO HighScores (username, score) VALUES {'%s','%s'};" % (u,s))
-
-def ClearTables(cur):
+        cur.execute("INSERT INTO HighScores (username, score) VALUES ('%s',%i);" % (u,s))
+    conn.commit()
+def ClearTables(cur,conn):
     clearTables = ("DELETE FROM Questions;", "DELETE FROM HighScores;")
 
     for c in clearTables:
         cur.execute(c)
 
     print("Tables cleared")
+
+def ShowData(cur,conn):
+    getContents = ("SELECT * FROM Questions", "SELECT * FROM HighScores")
+    for c in getContents:
+        cur.execute(c)
+        print(cur.fetchall())
 
 try:
     conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
@@ -48,9 +57,9 @@ try:
     for command in createTables:
         cur.execute(command)
 
-    #ClearTables(cur) #uncomment to clear all data from tables
-    #ExampleData(cur) #uncomment to populate tables with random data
-    
+    ClearTables(cur,conn) #uncomment to clear all data from tables
+    ExampleData(cur,conn) #uncomment to populate tables with random data
+    ShowData(cur,conn) #uncomment to show all data in both tables
     cur.close()
     conn.commit()
 

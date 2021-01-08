@@ -5,6 +5,8 @@ import sys
 import boto3
 import psycopg2
 import os
+import make_response
+from make_response.format import response_format
 
 ENDPOINT = envs.endpoint
 PORT = envs.awsport
@@ -14,53 +16,60 @@ DBNAME = "Quiz"
 PASSWORD = envs.password
 
 # AWS Variables
-os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
-session = boto3.Session(profile_name='default')
-client = boto3.client('rds')
-token = client.generate_db_auth_token(DBHostname=ENDPOINT, Port=PORT, DBUsername=USER, Region=REGION)
+# os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
+# session = boto3.Session(profile_name='default')
+# client = boto3.client('rds')
+# token = client.generate_db_auth_token(DBHostname=ENDPOINT, Port=PORT, DBUsername=USER, Region=REGION)
 
 app = Flask(__name__)
 qsAsked = []
 num = 0
+#answers = []
+class QuizClass():
+    answers = []
+    quizDict = {}
 
-def GetAnswers():
-    try:
-        conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
-        cur = conn.cursor()
-        count = cur.execute("SELECT COUNT number FROM Questions;")
-        n = random.randint(0,(count-1))
+    def __init__(self):
+        self.conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
+        self.cur = self.conn.cursor()
 
-        if n in qsAsked:
-            n = random.randint(0,(count-1))
+    def __del__(self):
+        self.conn.commit()
+        self.cur.close()
+        self.conn.close()
+
+    def FetchAnswers(self):
+        self.cur.execute("SELECT number FROM Questions;")
+        qNumber = self.cur.fetchall()
+        count = 3 #len(list(qNumber))
+        n = random.randint(1,(count))
+
+        while n in qsAsked:
+            n = random.randint(1,(count))
         
         qsAsked.append(n)
 
-        cur.execute("SELECT question, correct, wrong1, wrong2, wrong3 FROM Questions WHERE number = %s;" % ('1'))
-        answers = cur.fetchone()
-        cur.close()
-        conn.commit()
-        conn.close()
-        return(answers) #a tuple NOT A LIST
+        self.cur.execute("SELECT question, correct, wrong1, wrong2, wrong3 FROM Questions WHERE number = %i;" % (n))
+        print("SELECT question, correct, wrong1, wrong2, wrong3 FROM Questions WHERE number = %i;" % (n))
+        TUPLEanswers = self.cur.fetchone()
+        print("TUPLEaNS:" , TUPLEanswers[4])
+        self.quizDict = {
+            "question": TUPLEanswers[0],
+            "correctAns": TUPLEanswers[1],
+            "allAns":list(TUPLEanswers[1:5])
+        }
+        
+    def GetAnswers(self):
+        return(self.quizDict)
 
-    except Exception as e:
-        print("Error:{}".format(e))
-    
-def ShuffleAnswers():
-    answers = list(GetAnswers()) #must convert to list as tuples cannot be shuffled 
-    del answers[0] # get rid of question and just have answers
-    
-    random.shuffle(answers)
-
-    return(answers)
-
-def SetCookie():
-    num = len(qsAsked) +1
-    if not request.cookies.get("Number"):
-        response = make_response("Creating Cookie")
-        response.set_cookie("Question Number", num)
+    def ShuffleAnswers(self):
+        random.shuffle(self.quizDict["allAns"])
+        return(self.quizDict)
+        
+quizObj = QuizClass()
 
 # Web app functions
-@app.route('/') #127.0.0.1:5000
+@app.route('/', methods=['GET']) # 0.0.0.0:5000
 def index(): #homepage
     return render_template("index.html")
 
@@ -73,7 +82,6 @@ def getUsername():
         cur.execute("INSERT INTO HighScores (username) VALUES ('%s');" % username)
         cur.close()
         conn.commit()
-        conn.close()
 
     except Exception as e:
         print("Error:{}".format(e))
@@ -82,25 +90,37 @@ def getUsername():
 
 @app.route('/quiz', methods= ['POST'])
 def quiz():
-    answers = ShuffleAnswers()
-    q = answers[0]
-    ans1 = answers[1]
-    ans2 = answers[2]
-    ans3 = answers[3]
-    ans4 = answers[4]
-    num = request.cookies.get("Number")
+    #quizObj = QuizClass()
+    quizObj.FetchAnswers()
+    ans = quizObj.ShuffleAnswers()
+    print(quizObj.quizDict)
+    num = len(qsAsked) +1
+    
+    q = ans["question"]
+    ans1 = ans["allAns"][0]
+    ans2 = ans["allAns"][1]
+    ans3 = ans["allAns"][2]
+    ans4 = ans["allAns"][3]
+    
+    if len(qsAsked) == 0:
+        resp = make_response(render_template("quiz.html", questnum=num, question=q ,answer=ans1, answer2=ans2, answer3=ans3))
+        resp.set_cookie("Number", num)
+        print("cookie", request.cookies.get("Number"))
+        num = request.cookies.get("Number")
 
-    return render_template("quiz.html", questnum=num, question=q ,answer=ans1, answer2=ans2, answer3=ans3, answer4=ans4)  
+        return resp
+    return render_template("quiz.html", questnum=num, question=q ,answer=ans1, answer2=ans2, answer3=ans3, answer4=ans4)
 
 @app.route('/highScores')
 def highScores():
     try:
         conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
         cur = conn.cursor()
-        data = cur.execute("SELECT * FROM HighScores ORDER BY score DESC LIMIT 10;")
+        cur.execute("SELECT * FROM HighScores ORDER BY score DESC LIMIT 10;")
+        data = list(cur.fetchall())
+        print(data)
         cur.close()
         conn.commit()
-        conn.close()
         return render_template('highscores.html', highscores = data)
 
     except Exception as e:
