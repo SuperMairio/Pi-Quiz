@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 import envs #envs.py just holds all my variables I dont want public
 import random
 import sys
@@ -23,8 +23,8 @@ PASSWORD = envs.password
 
 app = Flask(__name__)
 qsAsked = []
-num = 0
-#answers = []
+score = {"right":0, "wrong":0}
+username = ""
 class QuizClass():
     answers = []
     quizDict = {}
@@ -50,9 +50,7 @@ class QuizClass():
         qsAsked.append(n)
 
         self.cur.execute("SELECT question, correct, wrong1, wrong2, wrong3 FROM Questions WHERE number = %i;" % (n))
-        print("SELECT question, correct, wrong1, wrong2, wrong3 FROM Questions WHERE number = %i;" % (n))
         TUPLEanswers = self.cur.fetchone()
-        print("TUPLEaNS:" , TUPLEanswers[4])
         self.quizDict = {
             "question": TUPLEanswers[0],
             "correctAns": TUPLEanswers[1],
@@ -86,39 +84,51 @@ def getUsername():
     except Exception as e:
         print("Error:{}".format(e))
 
-    return("")
+    return redirect("/quiz", code=302)
 
-@app.route('/quiz', methods= ['POST'])
+@app.route('/quiz', methods= ['POST', 'GET'])
 def quiz():
     #quizObj = QuizClass()
     quizObj.FetchAnswers()
     ans = quizObj.ShuffleAnswers()
-    print(quizObj.quizDict)
-    num = len(qsAsked) +1
-    
+    r = score["right"]
+    w = score["wrong"]
     q = ans["question"]
-    ans1 = ans["allAns"][0]
-    ans2 = ans["allAns"][1]
-    ans3 = ans["allAns"][2]
-    ans4 = ans["allAns"][3]
+    num = (len(qsAsked))
+    print("num", num)
+    answers = ans["allAns"]
+    correct = ans["correctAns"]
+
+    if num == 0:
+        num = 1
+
+    print("correct answer:", ans["correctAns"])
     
-    if len(qsAsked) == 0:
-        resp = make_response(render_template("quiz.html", questnum=num, question=q ,answer=ans1, answer2=ans2, answer3=ans3))
-        resp.set_cookie("Number", num)
-        print("cookie", request.cookies.get("Number"))
-        num = request.cookies.get("Number")
+    if request.method == 'POST':
+        if correct in request.form['answer']:
+            print("right", score["right"])
+            score["right"] += 1
+        else:
+            score["wrong"] += 1
+            print("wrong", score["wrong"])
+    #if request.form.validate_on_submit():
+    #   if correct in request.form():
+    #     print("right", score["right"])
+    # else:
+        #    score["wrong"] += 1
+        #   print("wrong", score["wrong"])
 
-        return resp
-    return render_template("quiz.html", questnum=num, question=q ,answer=ans1, answer2=ans2, answer3=ans3, answer4=ans4)
+    return (render_template("quiz.html", questnum=num, question=q ,answers=answers, wrong=w, right=r))
 
-@app.route('/highScores')
+@app.route('/highScores', methods = ['POST'])
 def highScores():
     try:
+        scores = score["right"]
         conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
         cur = conn.cursor()
+        cur.execute("INSERT INTO HighScores (score) VALUES (%i) WHERE username = ('%s')" % (scores, username))
         cur.execute("SELECT * FROM HighScores ORDER BY score DESC LIMIT 10;")
         data = list(cur.fetchall())
-        print(data)
         cur.close()
         conn.commit()
         return render_template('highscores.html', highscores = data)

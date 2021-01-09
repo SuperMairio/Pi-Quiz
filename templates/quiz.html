@@ -4,19 +4,31 @@
     </head>
     <body>
         <h1> Quiz </h1>
-        <h3>Q{{questnum}}</h3>
+        {% if wrong == 3 %}
+            <h3> End of quiz! </h3>
+            <h5> Your score was: {{right}}. Well done!</h5>
+            <form id="goToScores" action="/highScores" method="POST">
+                <input type="submit" value="See high scores" formaction="/highscores">
+            </form>
+        {% else %}
+            <h3>Q{{ questnum }}</h3>
 
-        <h3>{{question}}</h3>
-        <form id="quizForm" action="/quiz" method="POST">
-            <p>
-                <input type="radio" id="ans1" value={{answer}} />
-                <input type="radio" id="ans2" value={{answer2}} />
-                <input type="radio" id="ans3" value={{answer3}} />
-                <input type="radio" id="ans4" value={{answer4}} />
-            </p>
-
-            <input type="submit" value="Next Question" formaction="/quiz"/>
-        </form>
+            <h3>{{ question }}</h3>
+            <form id="quizForm" action="/quiz" method="POST">
+                <input type="radio" name="answer" id="a1" value={{answers[0]}} />
+                <label for="answer">{{answers[0]}}</label><br>
+                <input type="radio" name="answer" id="a2" value={{answers[1]}} />
+                <label for="answer">{{answers[1]}}</label><br>
+                <input type="radio" name="answer" id="a3" value={{answers[2]}} />
+                <label for="answer">{{answers[2]}}</label><br>
+                <input type="radio" name="answer" id="a4" value={{answers[3]}} />
+                <label for="answer">{{answers[3]}}</label><br>
+        
+                <input type="submit" value="Next Question" formaction="/quiz"/>
+            </form>
+            <h4>Current score: {{right}}</h4>
+            <h4>Chances: {{wrong}}/3</h4>
+        {% endif %}
 
     </body>
 </html>
