@@ -15,13 +15,13 @@
 
             <h3>{{ question }}</h3>
             <form id="quizForm" action="/quiz" method="POST">
-                <input type="radio" name="answer" id="a1" value={{answers[0]}} />
+                <input type="radio" name="answer" id="a1" value="{{answers[0]}}" />
                 <label for="answer">{{answers[0]}}</label><br>
-                <input type="radio" name="answer" id="a2" value={{answers[1]}} />
+                <input type="radio" name="answer" id="a2" value="{{answers[1]}}" />
                 <label for="answer">{{answers[1]}}</label><br>
-                <input type="radio" name="answer" id="a3" value={{answers[2]}} />
+                <input type="radio" name="answer" id="a3" value="{{answers[2]}}" />
                 <label for="answer">{{answers[2]}}</label><br>
-                <input type="radio" name="answer" id="a4" value={{answers[3]}} />
+                <input type="radio" name="answer" id="a4" value="{{answers[3]}}" />
                 <label for="answer">{{answers[3]}}</label><br>
         
                 <input type="submit" value="Next Question" formaction="/quiz"/>

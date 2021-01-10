@@ -7,6 +7,8 @@ import psycopg2
 import os
 import make_response
 from make_response.format import response_format
+from subprocess import Popen, PIPE
+
 
 ENDPOINT = envs.endpoint
 PORT = envs.awsport
@@ -27,7 +29,11 @@ score = {"right":0, "wrong":0}
 username = ""
 class QuizClass():
     answers = []
-    quizDict = {}
+    quizDict ={ 
+        "question": "",
+        "correctAns":[],
+        "allAns":[]
+        }
 
     def __init__(self):
         self.conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
@@ -51,11 +57,9 @@ class QuizClass():
 
         self.cur.execute("SELECT question, correct, wrong1, wrong2, wrong3 FROM Questions WHERE number = %i;" % (n))
         TUPLEanswers = self.cur.fetchone()
-        self.quizDict = {
-            "question": TUPLEanswers[0],
-            "correctAns": TUPLEanswers[1],
-            "allAns":list(TUPLEanswers[1:5])
-        }
+        self.quizDict["question"] = TUPLEanswers[0]
+        self.quizDict["correctAns"].append(TUPLEanswers[1]) 
+        self.quizDict["allAns"] = list(TUPLEanswers[1:5])
         
     def GetAnswers(self):
         return(self.quizDict)
@@ -88,6 +92,10 @@ def getUsername():
 
 @app.route('/quiz', methods= ['POST', 'GET'])
 def quiz():
+    try:
+        prevCorrect = ans["correctAns"]
+    except:
+        pass
     #quizObj = QuizClass()
     quizObj.FetchAnswers()
     ans = quizObj.ShuffleAnswers()
@@ -97,7 +105,8 @@ def quiz():
     num = (len(qsAsked))
     print("num", num)
     answers = ans["allAns"]
-    correct = ans["correctAns"]
+    cLen = len(ans["correctAns"])
+    correct = ans["correctAns"][(cLen - 2)]
 
     if num == 0:
         num = 1
@@ -105,7 +114,9 @@ def quiz():
     print("correct answer:", ans["correctAns"])
     
     if request.method == 'POST':
-        if correct in request.form['answer']:
+        print(request.form)
+        print(correct)
+        if request.form["answer"] == correct:
             print("right", score["right"])
             score["right"] += 1
         else:
