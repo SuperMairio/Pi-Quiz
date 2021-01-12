@@ -9,7 +9,7 @@ import make_response
 from make_response.format import response_format
 from subprocess import Popen, PIPE
 
-
+FILEPATH = envs.filepath
 ENDPOINT = envs.endpoint
 PORT = envs.awsport
 USER = envs.dbuser
@@ -47,8 +47,8 @@ class QuizClass():
     def FetchAnswers(self):
         self.cur.execute("SELECT number FROM Questions;")
         qNumber = self.cur.fetchall()
-        count = 3 #len(list(qNumber))
-        n = random.randint(1,(count))
+        count = 3
+        #n = random.randint(1,(count))
 
         while n in qsAsked:
             n = random.randint(1,(count))
@@ -59,7 +59,7 @@ class QuizClass():
         TUPLEanswers = self.cur.fetchone()
         self.quizDict["question"] = TUPLEanswers[0]
         self.quizDict["correctAns"].append(TUPLEanswers[1]) 
-        self.quizDict["allAns"] = list(TUPLEanswers[1:5])
+        self.quizDict["allAns"] = list(TUPLEanswers[1:4])
         
     def GetAnswers(self):
         return(self.quizDict)
@@ -96,17 +96,18 @@ def quiz():
         prevCorrect = ans["correctAns"]
     except:
         pass
-    #quizObj = QuizClass()
+
     quizObj.FetchAnswers()
     ans = quizObj.ShuffleAnswers()
     r = score["right"]
     w = score["wrong"]
     q = ans["question"]
     num = (len(qsAsked))
-    print("num", num)
     answers = ans["allAns"]
     cLen = len(ans["correctAns"])
     correct = ans["correctAns"][(cLen - 2)]
+    rightPin = "14"
+    wrongPins = ["15", "23", "18"]
 
     if num == 0:
         num = 1
@@ -119,15 +120,14 @@ def quiz():
         if request.form["answer"] == correct:
             print("right", score["right"])
             score["right"] += 1
+            command = FILEPATH + rightPin + "1 0 0" #flash green LED
+            process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+            output, error = process.communicate()
         else:
             score["wrong"] += 1
-            print("wrong", score["wrong"])
-    #if request.form.validate_on_submit():
-    #   if correct in request.form():
-    #     print("right", score["right"])
-    # else:
-        #    score["wrong"] += 1
-        #   print("wrong", score["wrong"])
+            command = FILEPATH + wrongPins[score["wrong"] - 1] + "1 1 0" #turn next blue LED on
+            process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+            output, error = process.communicate()
 
     return (render_template("quiz.html", questnum=num, question=q ,answers=answers, wrong=w, right=r))
 
