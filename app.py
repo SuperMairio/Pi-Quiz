@@ -116,7 +116,8 @@ def quiz(): # displays question and answers
             os.system(command = FILEPATH + wrongPin + "1 1 0") #turn next blue LED on
     
     if num == 3:
-        score["wrong"] = 3 #For example purposes end the quiz after three questions
+        score["wrong"] = 3
+        redirect("/highScores", code=302) #For example purposes end the quiz after three questions
     
     print("num", num)
     return (render_template("quiz.html", questnum=num, question=q ,answers=answers, wrong=w, right=r))
