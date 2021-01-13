@@ -44,7 +44,7 @@ class QuizClass(): # Gets questions and shuffles answers
         self.cur.execute("SELECT number FROM Questions;")
         qNumber = self.cur.fetchall()
         count = 3
-        #n = random.randint(1,(count))
+        n = random.randint(1,(count))
 
         while n in qsAsked:
             n = random.randint(1,(count))
