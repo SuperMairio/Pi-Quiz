@@ -127,7 +127,7 @@ def highScores(): # displays top ten scores
         scores = score["right"]
         conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
         cur = conn.cursor()
-        cur.execute("INSERT INTO HighScores (score) VALUES (%i, '%s');" % (scores, username))
+        cur.execute("INSERT INTO HighScores (username, score) VALUES ('%s', %i);" % (username, scores))
         cur.execute("SELECT * FROM HighScores ORDER BY score DESC LIMIT 10;")
         data = list(cur.fetchall())
         cur.close()
