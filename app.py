@@ -27,6 +27,8 @@ app = Flask(__name__)
 qsAsked = []
 score = {"right":0, "wrong":0}
 username = ""
+rightPin = "14"
+wrongPins = ["15", "23", "18"]
 class QuizClass():
     answers = []
     quizDict ={ 
@@ -84,6 +86,13 @@ def getUsername():
         cur.execute("INSERT INTO HighScores (username) VALUES ('%s');" % username)
         cur.close()
         conn.commit()
+        command = FILEPATH + rightPin + "1 0 0" #flash green LED
+        process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+        output, error = process.communicate()
+        for pin in wrongPins:
+            command = FILEPATH + pin + "1 0 0" #flash blue LEDs
+            process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+            output, error = process.communicate()
 
     except Exception as e:
         print("Error:{}".format(e))
@@ -106,8 +115,6 @@ def quiz():
     answers = ans["allAns"]
     cLen = len(ans["correctAns"])
     correct = ans["correctAns"][(cLen - 2)]
-    rightPin = "14"
-    wrongPins = ["15", "23", "18"]
 
     if num == 0:
         num = 1

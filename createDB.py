@@ -59,7 +59,7 @@ try:
 
     ClearTables(cur,conn) #uncomment to clear all data from tables
     ExampleData(cur,conn) #uncomment to populate tables with random data
-    ShowData(cur,conn) #uncomment to show all data in both tables
+    #ShowData(cur,conn) #uncomment to show all data in both tables
     cur.close()
     conn.commit()
 
