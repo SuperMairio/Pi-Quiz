@@ -86,7 +86,7 @@ def getUsername(): # takes username from POST and puts it in the database, as we
 
         for pin in allPins:
             command = FILEPATH + pin + "1 0 0" #flash all LEDs
-            os.system(command.split())
+            os.system(str(command.split()))
             #process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
             #output, error = process.communicate()
 
@@ -126,14 +126,14 @@ def quiz(): # displays question and answers
             print("right", score["right"])
             score["right"] += 1
             command = FILEPATH + rightPin + "1 0 0" #flash green LED
-            os.system(command.split())
+            os.system(str(command.split()))            
             #process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
             #output, error = process.communicate()
         else:
             score["wrong"] += 1
             wrongPin = wrongPins[score["wrong"] - 1]
             command = FILEPATH + wrongPin + "1 1 0" #turn next blue LED on
-            os.system(command.split())
+            os.system(str(command.split()))
             #process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
             #output, error = process.communicate()
 
