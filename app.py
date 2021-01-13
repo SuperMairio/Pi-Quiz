@@ -127,7 +127,6 @@ def quiz(): # displays question and answers
     
     if num == 3:
         score["wrong"] = 3 #For example purposes end the quiz after three questions
-        return(render_template("highScores.html"))
     
     print("num", num)
     return (render_template("quiz.html", questnum=num, question=q ,answers=answers, wrong=w, right=r))
