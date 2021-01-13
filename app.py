@@ -87,8 +87,6 @@ def getUsername(): # takes username from POST and puts it in the database, as we
         for pin in allPins:
             command = FILEPATH + pin + "1 0 0" #flash all LEDs
             os.system(str(command.split()))
-            #process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
-            #output, error = process.communicate()
 
     except Exception as e:
         print("Error:{}".format(e))
@@ -120,23 +118,19 @@ def quiz(): # displays question and answers
     print("correct answer:", ans["correctAns"])
     
     if request.method == 'POST': # checks answer against the correct one
-        print(request.form)
-        print(correct)
         if request.form["answer"] == correct:
             print("right", score["right"])
             score["right"] += 1
             command = FILEPATH + rightPin + "1 0 0" #flash green LED
             os.system(str(command.split()))            
-            #process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
-            #output, error = process.communicate()
+
         else:
             score["wrong"] += 1
             wrongPin = wrongPins[score["wrong"] - 1]
             command = FILEPATH + wrongPin + "1 1 0" #turn next blue LED on
             os.system(str(command.split()))
-            #process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
-            #output, error = process.communicate()
 
+    print("num", num)
     return (render_template("quiz.html", questnum=num, question=q ,answers=answers, wrong=w, right=r))
 
 @app.route('/highScores', methods = ['POST'])
