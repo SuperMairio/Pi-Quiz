@@ -75,20 +75,10 @@ def getUsername(): # takes username from POST and puts it in the database, as we
     allPins = wrongPins
     allPins.append(rightPin)
 
-    try:
-        conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
-        cur = conn.cursor()
-        username = request.form['username']
-        cur.execute("INSERT INTO HighScores (username) VALUES ('%s');" % username)
-        cur.close()
-        conn.commit()
-
-        for pin in allPins:
+    username = request.form['username']
+    for pin in allPins:
             os.system(FILEPATH + pin + "1 0 0") #flash all LEDs
             #os.system(str(command.split()))
-
-    except Exception as e:
-        print("Error:{}".format(e))
 
     return redirect("/quiz", code=302)
 
@@ -137,7 +127,7 @@ def highScores(): # displays top ten scores
         scores = score["right"]
         conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
         cur = conn.cursor()
-        cur.execute("INSERT INTO HighScores (score) VALUES (%i) WHERE username = ('%s')" % (scores, username))
+        cur.execute("INSERT INTO HighScores (score) VALUES (%i, '%s');" % (scores, username))
         cur.execute("SELECT * FROM HighScores ORDER BY score DESC LIMIT 10;")
         data = list(cur.fetchall())
         cur.close()
