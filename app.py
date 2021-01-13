@@ -3,11 +3,11 @@ import envs #envs.py just holds all my variables I dont want public
 import random
 import sys
 import boto3
-import psycopg2
+import psycopg2 # for postgresql
 import os
 import make_response
-from make_response.format import response_format
-from subprocess import Popen, PIPE
+from make_response.format import response_format 
+from subprocess import Popen, PIPE # for connecting to Pi 
 
 FILEPATH = envs.filepath
 ENDPOINT = envs.endpoint
@@ -17,19 +17,13 @@ REGION = envs.region
 DBNAME = "Quiz"
 PASSWORD = envs.password
 
-# AWS Variables
-# os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
-# session = boto3.Session(profile_name='default')
-# client = boto3.client('rds')
-# token = client.generate_db_auth_token(DBHostname=ENDPOINT, Port=PORT, DBUsername=USER, Region=REGION)
-
 app = Flask(__name__)
 qsAsked = []
 score = {"right":0, "wrong":0}
 username = ""
 rightPin = "14"
 wrongPins = ["15", "23", "18"]
-class QuizClass():
+class QuizClass(): # Gets questions and shuffles answers
     answers = []
     quizDict ={ 
         "question": "",
@@ -41,12 +35,12 @@ class QuizClass():
         self.conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
         self.cur = self.conn.cursor()
 
-    def __del__(self):
+    def __del__(self): # Cleans up 
         self.conn.commit()
         self.cur.close()
         self.conn.close()
 
-    def FetchAnswers(self):
+    def FetchAnswers(self): # Gets question and answers
         self.cur.execute("SELECT number FROM Questions;")
         qNumber = self.cur.fetchall()
         count = 3
@@ -66,7 +60,7 @@ class QuizClass():
     def GetAnswers(self):
         return(self.quizDict)
 
-    def ShuffleAnswers(self):
+    def ShuffleAnswers(self): # shuffles answer order 
         random.shuffle(self.quizDict["allAns"])
         return(self.quizDict)
         
@@ -78,7 +72,10 @@ def index(): #homepage
     return render_template("index.html")
 
 @app.route('/', methods=['POST'])
-def getUsername():
+def getUsername(): # takes username from POST and puts it in the database, as well as making all LEDs flash to show they are working
+    allPins = wrongPins
+    allPins.append(rightPin)
+
     try:
         conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
         cur = conn.cursor()
@@ -86,11 +83,9 @@ def getUsername():
         cur.execute("INSERT INTO HighScores (username) VALUES ('%s');" % username)
         cur.close()
         conn.commit()
-        command = FILEPATH + rightPin + "1 0 0" #flash green LED
-        process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
-        output, error = process.communicate()
-        for pin in wrongPins:
-            command = FILEPATH + pin + "1 0 0" #flash blue LEDs
+
+        for pin in allPins:
+            command = FILEPATH + pin + "1 0 0" #flash all LEDs
             process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
             output, error = process.communicate()
 
@@ -100,7 +95,7 @@ def getUsername():
     return redirect("/quiz", code=302)
 
 @app.route('/quiz', methods= ['POST', 'GET'])
-def quiz():
+def quiz(): # displays question and answers 
     try:
         prevCorrect = ans["correctAns"]
     except:
@@ -118,10 +113,12 @@ def quiz():
 
     if num == 0:
         num = 1
+    elif num == 3:
+        score["wrong"] = 3 #For example purposes end the quiz after three questions
 
     print("correct answer:", ans["correctAns"])
     
-    if request.method == 'POST':
+    if request.method == 'POST': # checks answer against the correct one
         print(request.form)
         print(correct)
         if request.form["answer"] == correct:
@@ -132,14 +129,15 @@ def quiz():
             output, error = process.communicate()
         else:
             score["wrong"] += 1
-            command = FILEPATH + wrongPins[score["wrong"] - 1] + "1 1 0" #turn next blue LED on
+            wrongPin = wrongPins[score["wrong"] - 1]
+            command = FILEPATH + wrongPin + "1 1 0" #turn next blue LED on
             process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
             output, error = process.communicate()
 
     return (render_template("quiz.html", questnum=num, question=q ,answers=answers, wrong=w, right=r))
 
 @app.route('/highScores', methods = ['POST'])
-def highScores():
+def highScores(): # displays top ten scores
     try:
         scores = score["right"]
         conn  = psycopg2.connect(host=ENDPOINT, port=PORT, database=DBNAME, user=USER, password=PASSWORD)
@@ -156,4 +154,4 @@ def highScores():
         return("Error:{}".format(e))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0') # gives me verbose error messages when something breaks

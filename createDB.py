@@ -10,19 +10,12 @@ REGION = envs.region
 DBNAME = "Quiz"
 PASSWORD = envs.password
 
-
-# AWS Variables
-# os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
-# session = boto3.Session(profile_name='root')
-# client = boto3.client('rds')
-# token = client.generate_db_auth_token(DBHostname=ENDPOINT, Port=PORT, DBUsername=USER, Region=REGION)
-
-# Other Variables
+# currently all placeholders - TODO: make actual questions and answers
 number = [1,2,3]
-questions = ["Question 1", "Question 2", "Question 3"]
-correctAns = ["1", "2", "3"]
+questions = ["Question", "Question", "Question"]
+correctAns = ["Correct Answer", "Correct Answer", "Correct Answer"]
 wrongAns = [["1a", "1b", "1c"],["2a", "2b", "2c"],["3a", "3b", "3c"]]
-usernames = ["mairi", "Cooler Mairi", "abc"]
+usernames = ["mairi", "Cooler Mairi", "username1"]
 scores = [2, 5, 1]
 
 def ExampleData(cur,conn): 
