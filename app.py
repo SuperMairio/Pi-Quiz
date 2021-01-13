@@ -111,8 +111,6 @@ def quiz(): # displays question and answers
 
     if num == 0:
         num = 1
-    elif num == 3:
-        score["wrong"] = 3 #For example purposes end the quiz after three questions
 
     print("correct answer:", ans["correctAns"])
     
@@ -126,11 +124,15 @@ def quiz(): # displays question and answers
             score["wrong"] += 1
             wrongPin = wrongPins[score["wrong"] - 1]
             os.system(command = FILEPATH + wrongPin + "1 1 0") #turn next blue LED on
-
+    
+    if num == 3:
+        score["wrong"] = 3 #For example purposes end the quiz after three questions
+        return(render_template("highScores.html"))
+    
     print("num", num)
     return (render_template("quiz.html", questnum=num, question=q ,answers=answers, wrong=w, right=r))
 
-@app.route('/highScores', methods = ['POST'])
+@app.route('/highScores')
 def highScores(): # displays top ten scores
     try:
         scores = score["right"]
